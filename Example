@@ -1,0 +1,109 @@
+
+    public class Bonus
+    {
+        public int Value;
+    }
+
+    public class Attribute
+    {
+        public int Value { get; private set; }
+
+        private readonly List<Bonus> _bonuses = new List<Bonus>();
+
+        public void AddBonus(Bonus bonus)
+        {
+            _bonuses.Add(bonus);
+            Recalculate();
+        }
+
+        public void RemoveBonus(Bonus bonus)
+        {
+            _bonuses.Remove(bonus);
+            Recalculate();
+        }
+
+        public void Recalculate()
+        {
+            Value = 0;
+            foreach (var bonus in _bonuses)
+            {
+                Value += bonus.Value;
+            }
+        }
+    }
+
+    public class Resource
+    {
+        public int MaxCount;
+        public int MinCount;
+
+        public int Count { get; private set; }
+        public Attribute Income;
+
+        public void ApplyIncome()
+        {
+            SetCount(Count + Income.Value);
+        }
+
+        public virtual void ApplyEffects()
+        {}
+
+        public void SetCount(int newCount)
+        {
+            if (Count > MaxCount)
+            {
+                Count = MaxCount;
+            }
+
+            if (Count < MinCount)
+            {
+                Count = MinCount;
+            }
+        }
+    }
+
+    class WormResource : Resource
+    {
+        private readonly Resource _mushrooms;
+        private readonly Bonus _bonus = new Bonus();
+
+        public WormResource(Resource mushrooms)
+        {
+            _mushrooms = mushrooms;
+            _mushrooms.Income.AddBonus(_bonus);
+        }
+
+        public override void ApplyEffects()
+        {
+            _bonus.Value = -Count;
+            _mushrooms.Income.Recalculate();
+        }
+    }
+
+    class ResourceManager
+    {
+        public Resource[] _resources;
+
+        void Start()
+        {
+            var mushroom = new Resource();
+            _resources = new Resource[]
+            {
+                mushroom,
+                new WormResource(mushroom),
+            };
+        }
+
+        public void OncePerDay()
+        {
+            foreach (var resource in _resources)
+            {
+                resource.ApplyIncome();
+            }
+
+            foreach (var resource in _resources)
+            {
+                resource.ApplyEffects();
+            }
+        }
+    }
